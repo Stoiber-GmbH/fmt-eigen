@@ -1,47 +1,62 @@
 cmake_minimum_required(VERSION 3.0)
-project(example)
-
-set(CMAKE_CXX_STANDARD 17)
+project(fmt-eigen)
 
 # use without ROS, and pure fmt
 # first install fmt from https://github.com/fmtlib/fmt
 
+option(FMT_EIGEN_BUILD_EXAMPLE "build example" ON)
+option(FMT_EIGEN_FETCH_EIGEN "fetch eigen" ON)
 
-include(ExternalProject)
+if (FMT_EIGEN_FETCH_EIGEN)
 
-set(EIGEN_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/eigen-install")
-set(EIGEN_INCLUDE_DIR "${EIGEN_INSTALL_DIR}/include/eigen3")
+  include(ExternalProject)
 
-file(MAKE_DIRECTORY ${EIGEN_INCLUDE_DIR})
+  set(EIGEN_INSTALL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/eigen-install")
+  set(EIGEN_INCLUDE_DIR "${EIGEN_INSTALL_DIR}/include/eigen3")
 
-ExternalProject_Add(
-    eigen
-    URL  https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-    SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/eigen-src"
-    BINARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/eigen-build"
-    INSTALL_DIR "${EIGEN_INSTALL_DIR}"
-    CMAKE_ARGS
-    -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
-    -DCMAKE_BUILD_TYPE=Release
-)
+  file(MAKE_DIRECTORY ${EIGEN_INCLUDE_DIR})
 
-file(MAKE_DIRECTORY ${EIGEN_INSTALL_DIR}/include)  # avoid race condition
+  ExternalProject_Add(
+      eigen
+      URL  https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
+      SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/eigen-src"
+      BINARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/eigen-build"
+      INSTALL_DIR "${EIGEN_INSTALL_DIR}"
+      CMAKE_ARGS
+      -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+      -DCMAKE_BUILD_TYPE=Release
+  )
 
-add_library(eigenlib INTERFACE IMPORTED GLOBAL)
-add_dependencies(eigenlib eigen)
-target_compile_features(eigenlib INTERFACE cxx_std_14)
+  file(MAKE_DIRECTORY ${EIGEN_INSTALL_DIR}/include)  # avoid race condition
 
-set_target_properties(eigenlib PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "${EIGEN_INSTALL_DIR}/include/eigen3"
-)
+  add_library(Eigen3 INTERFACE IMPORTED GLOBAL)
+  add_dependencies(Eigen3 eigen)
+  target_compile_features(Eigen3 INTERFACE cxx_std_14)
+
+  set_target_properties(Eigen3 PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${EIGEN_INSTALL_DIR}/include/eigen3"
+  )
+else()
+  find_package(Eigen3 REQUIRED)
+endif()
 
 
 find_package(fmt REQUIRED)
-add_executable(example example.cpp)
-target_link_libraries(example
-        fmt::fmt
-        eigenlib
-)
+
+add_library(fmt_eigen INTERFACE)
+target_link_libraries(fmt_eigen INTERFACE fmt::fmt Eigen3)
+target_include_directories(fmt_eigen INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_features(fmt_eigen INTERFACE cxx_std_17)
+
+if (FMT_EIGEN_BUILD_EXAMPLE)
+  add_executable(example example.cpp)
+  target_link_libraries(example
+          fmt_eigen
+          fmt::fmt
+          Eigen3
+  )
+endif()
+
 
 # use with rosfmt
 # first install rosfmt with: sudo apt install ros-noetic-rosfmt
