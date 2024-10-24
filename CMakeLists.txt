@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(fmt-eigen)
+project(fmt_eigen)
 
 # use without ROS, and pure fmt
 # first install fmt from https://github.com/fmtlib/fmt
@@ -44,9 +44,11 @@ endif()
 find_package(fmt REQUIRED)
 
 add_library(fmt_eigen INTERFACE)
-target_link_libraries(fmt_eigen INTERFACE fmt::fmt Eigen3)
+target_link_libraries(fmt_eigen INTERFACE fmt::fmt)
 target_include_directories(fmt_eigen INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_features(fmt_eigen INTERFACE cxx_std_17)
+
+add_library(fmt_eigen::fmt_eigen ALIAS fmt_eigen)
 
 if (FMT_EIGEN_BUILD_EXAMPLE)
   add_executable(example example.cpp)
