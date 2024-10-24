@@ -1,0 +1,6 @@
+build
+.cache
+eigen-build
+eigen-src
+eigen-install/*
+!eigen-install/include/eigen3/keep.md
